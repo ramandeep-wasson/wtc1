@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather and To-Do App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f0f8ff;  /* Light blue background */
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-bottom: 100px;  /* Make space for the chatbot */
+        }
+
+        .weather-container {
+            background-color: #e6a9ec;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .stock-container {
+            background-color: rgba(243, 153, 220, 0.59);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .form-inline {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            width: 70%;
+        }
+
+        .btn-primary {
+            width: 30%;
+            font-weight: bold;
+        }
+
+        h3, h1 {
+            color: #333;
+        }
+
+        .list-group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-group-item:nth-child(odd) {
+            background-color: lightgray;
+        }
+
+        .list-group-item .btn-danger {
+            position: absolute;
+            left: 70%;
+            transform: translateX(-70%);
+        }
+
+        /* Chatbot Style */
+        #chatbox {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;  /* Bright green for chatbot */
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            width: 300px;
+            height: 400px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #chatbox-header {
+            background-color: #fff;
+            color: #4CAF50;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .message {
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background-color: #d0f7d0;
+            color: #333;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .message.bot {
+            background-color: #e3f2fd;
+            color: #333;
+            text-align: left;
+            font-weight: normal;
+        }
+
+        #input-section {
+            display: flex;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        #send-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #send-btn:hover {
+            background-color: #45a049;
+        }
+        h2 {
+            text-align: center;  /* Center align the text */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mt-5">
+        <h1 class="text-center">Weather and To-Do App</h1>
+
+        <!-- Weather Search Form -->
+        <form method="GET" class="form-inline justify-content-center my-4">
+            <input type="text" name="city" class="form-control mr-2" placeholder="Enter city" value="{{ city }}">
+            <button type="submit" class="btn btn-primary">Get Weather</button>
+        </form>
+
+        <!-- Weather Information -->
+        <div class="weather-container">
+            <h3>Weather in {{ city }}</h3>
+            {% if icon %}
+                <img src="http://openweathermap.org/img/wn/{{ icon }}@2x.png" alt="Weather Icon">
+            {% else %}
+                <p>No weather icon available.</p>
+            {% endif %}
+            <p><strong>Temperature: </strong>{{ temperature }}°C</p>
+            <p><strong>Description: </strong>{{ description }}</p>
+            <p><strong>Humidity: </strong>{{ humidity }}%</p>
+            <p><strong>Wind Speed: </strong>{{ wind_speed }} m/s</p>
+            <p><strong>Feels Like: </strong>{{ feels_like }}°C</p>
+            {% if error_message %}
+                <div class="alert alert-danger">{{ error_message }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Task List Section -->
+        <h2 class="text-center mt-5">To-Do List</h2>
+        <form method="POST" class="form-inline justify-content-center my-4">
+            {% csrf_token %}
+            <input type="text" name="task" class="form-control mr-2" placeholder="Enter a new task">
+            <button type="submit" class="btn btn-primary">Add Task</button>
+        </form>
+
+        <!-- Task List -->
+        <ul class="list-group">
+            {% for task in tasks %}
+                <li class="list-group-item">
+                    <span>{{ task.task }}</span>
+                    <a href="{% url 'delete_task' task.id %}" class="btn btn-danger btn-sm">Delete</a>
+                </li>
+            {% empty %}
+                <li class="list-group-item text-center">No tasks yet. Add one!</li>
+            {% endfor %}
+        </ul>
+
+        <!-- Chatbot UI -->
+        <div id="chatbox">
+            <div id="chatbox-header">AI Chatbot</div>
+            <div id="messages"></div>
+            <div id="input-section">
+                <input type="text" id="user-input" placeholder="Type your message here...">
+                <button type="button" id="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to retrieve the CSRF token from the rendered HTML
+        const getCSRFToken = () => {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        };
+
+        // Get UI elements
+        const sendBtn = document.getElementById('send-btn');
+        const userInput = document.getElementById('user-input');
+        const messagesDiv = document.getElementById('messages');
+
+        // Event listener for Send button
+        sendBtn.addEventListener('click', async () => {
+            const message = userInput.value.trim();
+            if (message === "") return;
+            
+            // Display user message
+            displayMessage(message, 'user');
+
+            // Send request to chatbot API
+            const response = await fetch("{% url 'chatbot_response' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({ message }),
+            });
+
+            const data = await response.json();
+            const botMessage = data.response || "Sorry, something went wrong.";
+            
+            // Display bot's response
+            displayMessage(botMessage, 'bot');
+
+            // Clear user input field
+            userInput.value = "";
+        });
+
+        // Function to display messages
+        const displayMessage = (message, sender) => {
+            const div = document.createElement('div');
+            div.classList.add('message', sender);
+            div.textContent = message;
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+    </script>
+</body>
+</html>
